@@ -2,53 +2,67 @@
 
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
+import { useEffect } from 'react';
+
+// Define admin emails
+const ADMIN_EMAILS = ['joseph.liao1018@gmail.com']; // Add your admin emails here
 
 export default function Navbar() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const isAdmin = session?.user?.email && ADMIN_EMAILS.includes(session.user.email);
+  
+  // Debug log
+  useEffect(() => {
+    console.log('Navbar session state:', {
+      status,
+      userEmail: session?.user?.email,
+      isAdmin,
+    });
+  }, [status, session, isAdmin]);
   
   return (
-    <nav className="bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <Link href="/" className="flex items-center">
-              <span className="text-xl font-bold text-indigo-600">Class Scheduler</span>
-            </Link>
-          </div>
-          
-          <div className="flex items-center">
-            {session ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+    <nav className="bg-indigo-600 text-white shadow-md">
+      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+        <Link href="/" className="text-xl font-bold">
+          Class Scheduler
+        </Link>
+        
+        <div className="flex items-center space-x-6">
+          {status === 'authenticated' ? (
+            <>
+              <Link href="/dashboard" className="hover:text-indigo-200">
+                Dashboard
+              </Link>
+              
+              {isAdmin && (
+                <Link 
+                  href="/admin/classes" 
+                  className="bg-indigo-700 px-3 py-1 rounded-md hover:bg-indigo-500 transition-colors"
                 >
-                  Dashboard
+                  Manage Classes
                 </Link>
-                <button
-                  onClick={() => signOut()}
-                  className="ml-4 text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Sign Out
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/auth/login"
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/auth/register"
-                  className="ml-4 bg-indigo-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-500"
-                >
-                  Register
-                </Link>
-              </>
-            )}
-          </div>
+              )}
+              
+              <button 
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="bg-white text-indigo-600 px-3 py-1 rounded-md hover:bg-indigo-100"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/auth/login" className="hover:text-indigo-200">
+                Sign In
+              </Link>
+              <Link 
+                href="/auth/register"
+                className="bg-white text-indigo-600 px-3 py-1 rounded-md hover:bg-indigo-100"
+              >
+                Register
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

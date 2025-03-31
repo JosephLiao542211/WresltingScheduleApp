@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function Login() {
@@ -10,25 +10,53 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const errorParam = searchParams.get('error');
+  
+  // Debug log for callback URL
+  useEffect(() => {
+    console.log('Login page mounted:', {
+      callbackUrl,
+      errorParam,
+      searchParams: Object.fromEntries(searchParams.entries()),
+    });
+  }, [callbackUrl, errorParam, searchParams]);
+  
+  // Set error from URL parameter if present
+  useEffect(() => {
+    if (errorParam) {
+      setError(errorParam === 'Authentication failed' 
+        ? 'Please sign in to access this page'
+        : 'An error occurred during authentication');
+    }
+  }, [errorParam]);
   
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     
     try {
+      console.log('Attempting sign in with callback:', callbackUrl);
+      
       const result = await signIn('credentials', {
         redirect: false,
         email,
         password,
+        callbackUrl,
       });
+      
+      console.log('Sign in result:', result);
       
       if (result?.error) {
         setError('Invalid email or password');
         return;
       }
       
-      router.push('/dashboard');
-    } catch {
+      // Use replace instead of push to prevent back-button issues
+      router.replace(callbackUrl);
+    } catch (error) {
+      console.error('Sign in error:', error);
       setError('Something went wrong. Please try again.');
     }
   };

@@ -29,7 +29,6 @@ model Class {
   description String?
   startTime   DateTime
   endTime     DateTime
-  dayOfWeek   Int            // 0-6 for Sunday-Saturday
   capacity    Int
   enrollments Enrollment[]
   createdAt   DateTime       @default(now())

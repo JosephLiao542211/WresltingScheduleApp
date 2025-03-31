@@ -4,6 +4,16 @@ import { compare } from 'bcrypt';
 import prisma from '@/lib/db';
 import { JWT } from 'next-auth/jwt';
 
+// Define admin emails
+const ADMIN_EMAILS = ['joseph.liao1018@gmail.com'];
+
+interface CustomUser {
+  id: string;
+  email: string;
+  name: string | null;
+  isAdmin: boolean;
+}
+
 declare module 'next-auth' {
   interface Session {
     user: {
@@ -11,6 +21,7 @@ declare module 'next-auth' {
       name?: string | null;
       email?: string | null;
       image?: string | null;
+      isAdmin?: boolean;
     }
   }
 }
@@ -42,26 +53,39 @@ export const authOptions: AuthOptions = {
           return null;
         }
         
-        return {
+        const customUser: CustomUser = {
           id: user.id,
           email: user.email,
-          name: user.name
+          name: user.name,
+          isAdmin: ADMIN_EMAILS.includes(user.email)
         };
+        
+        return customUser;
       }
     })
   ],
   session: {
     strategy: "jwt" as const,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: '/auth/login',
   },
   callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.isAdmin = (user as CustomUser).isAdmin;
+      }
+      return token;
+    },
     async session({ session, token }: { session: Session; token: JWT }) {
       if (token && session.user) {
         session.user.id = token.sub;
+        session.user.isAdmin = token.isAdmin as boolean;
       }
       return session;
     }
-  }
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development',
 }; 
