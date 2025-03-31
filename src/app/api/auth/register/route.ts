@@ -4,12 +4,12 @@ import { hash } from 'bcrypt';
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password } = await req.json();
+    const { email, password, name } = await req.json();
     
     // Basic validation
-    if (!name || !email || !password) {
+    if (!email || !password) {
       return NextResponse.json(
-        { message: 'Missing required fields' },
+        { error: 'Email and password are required' },
         { status: 400 }
       );
     }
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     
     if (existingUser) {
       return NextResponse.json(
-        { message: 'User with this email already exists' },
+        { error: 'User with this email already exists' },
         { status: 400 }
       );
     }
@@ -32,20 +32,44 @@ export async function POST(req: NextRequest) {
     // Create user
     const user = await prisma.user.create({
       data: {
-        name,
         email,
         hashedPassword,
+        name: name || email.split("@")[0], // Use part of email as name if not provided
       },
     });
     
-    // Don't return the password
-    const { hashedPassword: _, ...userWithoutPassword } = user;
-    
-    return NextResponse.json(userWithoutPassword, { status: 201 });
+    return NextResponse.json({
+      user: {
+        email: user.email,
+        name: user.name,
+      },
+    });
   } catch (error) {
-    console.error('Registration error:', error);
+    // Log the full error details
+    console.error('Registration error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : 'Unknown error type',
+    });
+
+    // Check for specific Prisma errors
+    if (error instanceof Error) {
+      if (error.message.includes('P2002')) {
+        return NextResponse.json(
+          { error: 'A user with this email already exists' },
+          { status: 400 }
+        );
+      }
+      if (error.message.includes('P1001')) {
+        return NextResponse.json(
+          { error: 'Database connection error. Please try again later.' },
+          { status: 503 }
+        );
+      }
+    }
+
     return NextResponse.json(
-      { message: 'Something went wrong' },
+      { error: 'Error creating user. Please try again later.' },
       { status: 500 }
     );
   }

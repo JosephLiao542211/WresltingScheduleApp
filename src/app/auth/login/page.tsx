@@ -1,133 +1,133 @@
 'use client';
 
-import { useState, FormEvent, useEffect } from 'react';
-import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { useState, Suspense } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useToast } from "@/components/ui/use-toast";
 
-export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+function LoginForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
-  const errorParam = searchParams.get('error');
-  
-  // Debug log for callback URL
-  useEffect(() => {
-    console.log('Login page mounted:', {
-      callbackUrl,
-      errorParam,
-      searchParams: Object.fromEntries(searchParams.entries()),
-    });
-  }, [callbackUrl, errorParam, searchParams]);
-  
-  // Set error from URL parameter if present
-  useEffect(() => {
-    if (errorParam) {
-      setError(errorParam === 'Authentication failed' 
-        ? 'Please sign in to access this page'
-        : 'An error occurred during authentication');
-    }
-  }, [errorParam]);
-  
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
-    
+    setIsLoading(true);
+
     try {
-      console.log('Attempting sign in with callback:', callbackUrl);
-      
-      const result = await signIn('credentials', {
-        redirect: false,
+      const result = await signIn("credentials", {
         email,
         password,
-        callbackUrl,
+        redirect: false,
       });
-      
-      console.log('Sign in result:', result);
-      
+
       if (result?.error) {
-        setError('Invalid email or password');
-        return;
+        toast({
+          title: "Error",
+          description: "Invalid email or password",
+          variant: "destructive",
+        });
+      } else {
+        const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+        router.push(callbackUrl);
       }
-      
-      // Use replace instead of push to prevent back-button issues
-      router.replace(callbackUrl);
-    } catch (error) {
-      console.error('Sign in error:', error);
-      setError('Something went wrong. Please try again.');
+    } catch {
+      toast({
+        title: "Error",
+        description: "An error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
-  
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Sign in to your account
           </h2>
         </div>
-        
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
-        )}
-        
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4 rounded-md shadow-sm">
+          <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="email" className="sr-only">Email address</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email address
+              </label>
               <input
                 id="email"
                 name="email"
                 type="email"
                 autoComplete="email"
                 required
-                className="relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
-                placeholder="Email address"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Email address"
               />
             </div>
-            
             <div>
-              <label htmlFor="password" className="sr-only">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
               <input
                 id="password"
                 name="password"
                 type="password"
                 autoComplete="current-password"
                 required
-                className="relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
-                placeholder="Password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Password"
               />
             </div>
           </div>
-          
+
           <div>
             <button
               type="submit"
-              className="group relative flex w-full justify-center rounded-md bg-indigo-600 py-2 px-3 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              disabled={isLoading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              Sign in
+              {isLoading ? "Signing in..." : "Sign in"}
             </button>
           </div>
-          
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Don&apos;t have an account?{' '}
-              <Link href="/auth/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Register here
-              </Link>
-            </p>
-          </div>
         </form>
+
+        <div className="text-center">
+          <Link
+            href="/auth/register"
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
+            Don&apos;t have an account? Sign up
+          </Link>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="animate-pulse text-gray-500">Loading...</div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <div className="min-h-screen">
+      <Suspense fallback={<LoadingFallback />}>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 } 

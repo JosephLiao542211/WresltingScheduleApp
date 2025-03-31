@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useSession } from 'next-auth/react';
+import { Enrollment, User } from '@prisma/client';
 
 interface ClassCardProps {
   classItem: {
@@ -13,7 +13,7 @@ interface ClassCardProps {
     startTime: string;
     endTime: string;
     capacity: number;
-    enrollments: any[];
+    enrollments: (Enrollment & { user: User })[];
   };
 }
 
@@ -39,7 +39,7 @@ export default function ClassCard({ classItem }: ClassCardProps) {
         const error = await response.json();
         alert(`Failed to enroll: ${error.message}`);
       }
-    } catch (error) {
+    } catch {
       alert('An error occurred while enrolling');
     }
   };

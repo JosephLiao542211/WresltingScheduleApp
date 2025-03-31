@@ -3,27 +3,24 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { PrismaClient, Prisma } from '@prisma/client';
 import type { NextRequest } from 'next/server';
-import prisma from '@/lib/db';
+
+import prisma from "@/lib/prisma";
 
 const prismaClient = new PrismaClient();
 
-// Admin emails for authorization
-const ADMIN_EMAILS = ['joseph.liao1018@gmail.com']; // Add your admin emails here
 
-// Helper function to check if user is admin
-async function isAdmin(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  return session && session.user && ADMIN_EMAILS.includes(session.user.email as string);
-}
+
+
 
 // GET all classes (for admin)
 export async function GET() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.email || session.user.email !== 'joseph.liao1018@gmail.com') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const classes = await prismaClient.class.findMany({
       include: {
@@ -44,6 +41,7 @@ export async function GET() {
       },
     });
     
+
     // Transform the data to ensure user information is properly included
     const transformedClasses = classes.map(classItem => ({
       ...classItem,
@@ -150,16 +148,16 @@ export async function POST(request: NextRequest) {
 }
 
 // DELETE a class
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.email || session.user.email !== 'joseph.liao1018@gmail.com') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!session?.user?.email || session.user.email !== "joseph.liao1018@gmail.com") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  
+
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    // Delete all enrollments first
+    await prisma.enrollment.deleteMany();
     
     if (!id) {
       return NextResponse.json({ error: 'Class ID is required' }, { status: 400 });
@@ -181,9 +179,9 @@ export async function DELETE(request: NextRequest) {
     
     return NextResponse.json({ message: 'Class deleted successfully' });
   } catch (error) {
-    console.error('Error deleting class:', error);
+    console.error("Failed to clear classes:", error);
     return NextResponse.json(
-      { error: 'Failed to delete class. Please try again.' },
+      { error: "Failed to clear classes" },
       { status: 500 }
     );
   }

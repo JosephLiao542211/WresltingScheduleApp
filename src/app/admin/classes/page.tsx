@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Calendar from 'react-calendar';
+import type { Value } from 'react-calendar/dist/esm/shared/types.js';
 import 'react-calendar/dist/Calendar.css';
 import {
   AlertDialog,
@@ -17,17 +18,12 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, Trash2, Plus } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Class, Enrollment, User } from "@prisma/client";
 
-interface ClassItem {
-  id: string;
-  title: string;
-  description: string;
-  startTime: string;
-  endTime: string;
-  capacity: number;
-  enrollments?: any[];
+interface ClassWithEnrollments extends Class {
+  enrollments?: (Enrollment & { user: User })[];
 }
 
 interface FormData {
@@ -44,11 +40,11 @@ interface FormData {
 }
 
 export default function AdminClasses() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const { toast } = useToast();
   
-  const [classes, setClasses] = useState<ClassItem[]>([]);
+  const [classes, setClasses] = useState<ClassWithEnrollments[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [formData, setFormData] = useState<FormData>({
@@ -64,7 +60,6 @@ export default function AdminClasses() {
     selectedDays: Array(7).fill(false),
   });
   const [isClearing, setIsClearing] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -83,10 +78,18 @@ export default function AdminClasses() {
       }
       const data = await res.json();
       setClasses(data);
-    } catch (error) {
-      console.error('Failed to fetch classes', error);
+    } catch {
+      console.error('Failed to fetch classes');
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const handleDateChange = (value: Value) => {
+    if (value instanceof Date) {
+      setSelectedDate(value);
+    } else if (Array.isArray(value) && value[0] instanceof Date) {
+      setSelectedDate(value[0]);
     }
   };
   
@@ -176,7 +179,7 @@ export default function AdminClasses() {
               const errorData = await response.json();
               errors.push(`Failed to create class for ${date.toLocaleDateString()}: ${errorData.error}`);
             }
-          } catch (error) {
+          } catch {
             errors.push(`Error creating class for ${date.toLocaleDateString()}: Network error`);
           }
         }
@@ -202,8 +205,8 @@ export default function AdminClasses() {
         } else {
           alert(`Successfully created ${successCount} classes!`);
         }
-      } catch (error) {
-        console.error('Error creating recurring classes:', error);
+      } catch {
+        console.error('Error creating recurring classes');
         alert('Failed to create recurring classes. Please try again.');
       }
     } else {
@@ -235,8 +238,6 @@ export default function AdminClasses() {
           body: JSON.stringify(classData),
         });
         
-        const responseData = await response.json();
-        
         if (response.ok) {
           setFormData({
             title: '',
@@ -254,11 +255,12 @@ export default function AdminClasses() {
           await fetchClasses();
           alert('Class created successfully!');
         } else {
-          alert(`Failed to create class: ${responseData.error || 'Unknown error'}`);
+          const errorData = await response.json();
+          alert(`Failed to create class: ${errorData.error}`);
         }
-      } catch (error) {
-        console.error('Error creating class:', error);
-        alert('An error occurred while creating the class. Please try again.');
+      } catch {
+        console.error('Error creating class');
+        alert('Failed to create class. Please try again.');
       }
     }
   };
@@ -333,10 +335,10 @@ export default function AdminClasses() {
         const error = await response.json();
         throw new Error(error.message || 'Failed to clear classes');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message || "Failed to clear classes. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to clear classes. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -395,11 +397,7 @@ export default function AdminClasses() {
         <div className="col-span-12 lg:col-span-5 space-y-6">
           <div className="bg-white p-6 rounded-xl shadow-md">
             <Calendar
-              onChange={(value: any) => {
-                if (value instanceof Date) {
-                  setSelectedDate(value);
-                }
-              }}
+              onChange={handleDateChange}
               value={selectedDate}
               className="w-full"
               tileContent={tileContent}
@@ -451,7 +449,7 @@ export default function AdminClasses() {
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <h4 className="text-sm font-medium text-gray-700 mb-2">Registered Users:</h4>
                         <div className="space-y-1 max-h-40 overflow-y-auto">
-                          {classItem.enrollments.map((enrollment: any) => (
+                          {classItem.enrollments.map((enrollment: Enrollment & { user: User }) => (
                             <div 
                               key={enrollment.id} 
                               className="flex items-center justify-between py-1 px-2 hover:bg-gray-50 rounded"
