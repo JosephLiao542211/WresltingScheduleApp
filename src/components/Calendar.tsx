@@ -58,7 +58,7 @@ export default function ClassCalendar({ classes: initialClasses, userId }: Calen
     const interval = setInterval(refreshData, 30000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshData]);
 
   const handleDateChange = (value: Value) => {
     if (value instanceof Date) {
@@ -162,29 +162,7 @@ export default function ClassCalendar({ classes: initialClasses, userId }: Calen
     !classItem.enrollments.some(e => e.user.id === userId)
   );
 
-  const formatDateTime = (dateStr: Date | string | undefined) => {
-    if (!dateStr) return 'No date available';
-    
-    try {
-      const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
-      
-      // Check if the date is valid
-      if (isNaN(date.getTime())) {
-        return 'Invalid date';
-      }
-      
-      return date.toLocaleString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Invalid date';
-    }
-  };
+  
 
   return (
     <div className="flex flex-col gap-8 w-full">
