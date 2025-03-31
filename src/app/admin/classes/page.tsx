@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, Trash2, Plus } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Class, Enrollment, User } from "@prisma/client";
 
@@ -39,7 +39,7 @@ interface FormData {
 }
 
 export default function AdminClasses() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -82,6 +82,12 @@ export default function AdminClasses() {
       console.error('Failed to fetch classes', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const handleDateChange = (value: Date | Date[] | null) => {
+    if (value instanceof Date) {
+      setSelectedDate(value);
     }
   };
   
@@ -171,7 +177,7 @@ export default function AdminClasses() {
               const errorData = await response.json();
               errors.push(`Failed to create class for ${date.toLocaleDateString()}: ${errorData.error}`);
             }
-          } catch (error) {
+          } catch {
             errors.push(`Error creating class for ${date.toLocaleDateString()}: Network error`);
           }
         }
@@ -197,8 +203,8 @@ export default function AdminClasses() {
         } else {
           alert(`Successfully created ${successCount} classes!`);
         }
-      } catch (error) {
-        console.error('Error creating recurring classes:', error);
+      } catch {
+        console.error('Error creating recurring classes');
         alert('Failed to create recurring classes. Please try again.');
       }
     } else {
@@ -230,8 +236,6 @@ export default function AdminClasses() {
           body: JSON.stringify(classData),
         });
         
-        const responseData = await response.json();
-        
         if (response.ok) {
           setFormData({
             title: '',
@@ -249,11 +253,12 @@ export default function AdminClasses() {
           await fetchClasses();
           alert('Class created successfully!');
         } else {
-          alert(`Failed to create class: ${responseData.error || 'Unknown error'}`);
+          const errorData = await response.json();
+          alert(`Failed to create class: ${errorData.error}`);
         }
-      } catch (error) {
-        console.error('Error creating class:', error);
-        alert('An error occurred while creating the class. Please try again.');
+      } catch {
+        console.error('Error creating class');
+        alert('Failed to create class. Please try again.');
       }
     }
   };
@@ -390,11 +395,7 @@ export default function AdminClasses() {
         <div className="col-span-12 lg:col-span-5 space-y-6">
           <div className="bg-white p-6 rounded-xl shadow-md">
             <Calendar
-              onChange={(value: any) => {
-                if (value instanceof Date) {
-                  setSelectedDate(value);
-                }
-              }}
+              onChange={handleDateChange}
               value={selectedDate}
               className="w-full"
               tileContent={tileContent}

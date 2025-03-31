@@ -24,7 +24,7 @@ export default function ClassCalendar({ classes, userId }: CalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const { toast } = useToast();
 
-  const handleDateChange = (value: Date | Date[] | null, event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleDateChange = (value: any) => {
     if (value instanceof Date) {
       setSelectedDate(value);
     }
@@ -48,7 +48,7 @@ export default function ClassCalendar({ classes, userId }: CalendarProps) {
         title: "Success",
         description: "Successfully enrolled in class",
       });
-    } catch (_) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to enroll in class",
@@ -75,7 +75,7 @@ export default function ClassCalendar({ classes, userId }: CalendarProps) {
         title: "Success",
         description: "Successfully unenrolled from class",
       });
-    } catch (_) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to unenroll from class",

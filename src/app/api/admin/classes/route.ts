@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     });
     
     return NextResponse.json(classes);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Failed to fetch classes:', error);
     return NextResponse.json(
       { error: 'Failed to fetch classes. Please try again.' },
