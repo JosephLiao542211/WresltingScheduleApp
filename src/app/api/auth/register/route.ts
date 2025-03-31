@@ -45,9 +45,31 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    // Log the full error details
+    console.error('Registration error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : 'Unknown error type',
+    });
+
+    // Check for specific Prisma errors
+    if (error instanceof Error) {
+      if (error.message.includes('P2002')) {
+        return NextResponse.json(
+          { error: 'A user with this email already exists' },
+          { status: 400 }
+        );
+      }
+      if (error.message.includes('P1001')) {
+        return NextResponse.json(
+          { error: 'Database connection error. Please try again later.' },
+          { status: 503 }
+        );
+      }
+    }
+
     return NextResponse.json(
-      { error: 'Error creating user' },
+      { error: 'Error creating user. Please try again later.' },
       { status: 500 }
     );
   }
