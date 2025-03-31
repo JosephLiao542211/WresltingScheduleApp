@@ -3,8 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { PrismaClient, Prisma } from '@prisma/client';
 import type { NextRequest } from 'next/server';
+import prisma from '@/lib/db';
 
-const prisma = new PrismaClient();
+const prismaClient = new PrismaClient();
 
 // Admin emails for authorization
 const ADMIN_EMAILS = ['joseph.liao1018@gmail.com']; // Add your admin emails here
@@ -16,30 +17,50 @@ async function isAdmin(req: NextRequest) {
 }
 
 // GET all classes (for admin)
-export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.email || session.user.email !== 'joseph.liao1018@gmail.com') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export async function GET() {
   try {
-    const classes = await prisma.class.findMany({
+    const session = await getServerSession(authOptions);
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const classes = await prismaClient.class.findMany({
       include: {
-        enrollments: true,
+        enrollments: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
         startTime: 'asc',
       },
     });
     
-    return NextResponse.json(classes);
+    // Transform the data to ensure user information is properly included
+    const transformedClasses = classes.map(classItem => ({
+      ...classItem,
+      enrollments: classItem.enrollments.map(enrollment => ({
+        ...enrollment,
+        user: {
+          id: enrollment.user.id,
+          name: enrollment.user.name || enrollment.user.email.split('@')[0], // Use email username if name is not set
+          email: enrollment.user.email,
+        },
+      })),
+    }));
+
+    return NextResponse.json(transformedClasses);
   } catch (error) {
-    console.error('Failed to fetch classes:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch classes. Please try again.' },
-      { status: 500 }
-    );
+    console.error('Error fetching classes:', error);
+    return NextResponse.json({ error: 'Failed to fetch classes' }, { status: 500 });
   }
 }
 
@@ -100,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // Create the class
-      const newClass = await prisma.class.create({
+      const newClass = await prismaClient.class.create({
         data: classData,
       });
       
@@ -145,7 +166,7 @@ export async function DELETE(request: NextRequest) {
     }
     
     // Check if class exists
-    const existingClass = await prisma.class.findUnique({
+    const existingClass = await prismaClient.class.findUnique({
       where: { id },
     });
 
@@ -154,7 +175,7 @@ export async function DELETE(request: NextRequest) {
     }
     
     // Delete the class (enrollments will be cascade deleted)
-    await prisma.class.delete({
+    await prismaClient.class.delete({
       where: { id },
     });
     

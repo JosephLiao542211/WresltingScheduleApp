@@ -453,10 +453,15 @@ export default function AdminClasses() {
                         <div className="space-y-1 max-h-40 overflow-y-auto">
                           {classItem.enrollments.map((enrollment: any) => (
                             <div 
-                              key={enrollment.user.id} 
-                              className="flex items-center justify-between py-1 px-2"
+                              key={enrollment.id} 
+                              className="flex items-center justify-between py-1 px-2 hover:bg-gray-50 rounded"
                             >
-                              <span className="text-sm text-gray-600">{enrollment.user.name || enrollment.user.email}</span>
+                              <span className="text-sm text-gray-600">
+                                {enrollment.user.name}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {enrollment.user.email}
+                              </span>
                             </div>
                           ))}
                         </div>
