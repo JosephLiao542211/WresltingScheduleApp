@@ -288,6 +288,37 @@ export default function AdminClasses() {
     }
   };
 
+  const handleUnenrollUser = async (classId: string, userId: string) => {
+    try {
+      const response = await fetch('/api/admin/classes/unenroll', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ classId, userId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to unenroll user');
+      }
+
+      toast({
+        title: "Success",
+        description: "Successfully removed user from class",
+      });
+
+      // Refresh the classes data
+      await fetchClasses();
+    } catch (error) {
+      console.error('Error unenrolling user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove user from class",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getClassesForDate = (date: Date) => {
     return classes.filter(classItem => {
       const classDate = new Date(classItem.startTime);
@@ -449,12 +480,22 @@ export default function AdminClasses() {
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <h4 className="text-sm font-medium text-gray-700 mb-2">Registered Users:</h4>
                         <div className="space-y-1 max-h-40 overflow-y-auto">
-                          {classItem.enrollments.map((enrollment: Enrollment & { user: User }) => (
+                          {classItem.enrollments.map((enrollment) => (
                             <div 
-                              key={enrollment.user.id} 
-                              className="flex items-center justify-between py-1 px-2"
+                              key={enrollment.id} 
+                              className="flex items-center justify-between py-1 px-2 hover:bg-gray-50"
                             >
-                              <span className="text-sm text-gray-600">{enrollment.user.name || enrollment.user.email}</span>
+                              <span className="text-sm text-gray-600">
+                                {enrollment.user?.name || enrollment.user?.email || 'Anonymous User'}
+                              </span>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleUnenrollUser(classItem.id, enrollment.userId)}
+                                className="ml-2"
+                              >
+                                Remove
+                              </Button>
                             </div>
                           ))}
                         </div>

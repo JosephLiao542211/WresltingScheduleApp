@@ -11,16 +11,27 @@ export async function GET() {
   }
   
   try {
-    const enrollments = await prisma.enrollment.findMany({
+    const classes = await prisma.class.findMany({
       where: {
-        userId: session.user.id
+        enrollments: {
+          some: {
+            userId: session.user.id
+          }
+        }
       },
       include: {
-        class: true
+        enrollments: {
+          include: {
+            user: true
+          }
+        }
+      },
+      orderBy: {
+        startTime: 'asc'
       }
     });
     
-    return NextResponse.json(enrollments);
+    return NextResponse.json(classes);
   } catch (error) {
     console.error('Error fetching enrolled classes:', error);
     return NextResponse.json(
