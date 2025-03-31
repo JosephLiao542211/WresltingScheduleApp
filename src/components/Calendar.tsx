@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import Calendar from "react-calendar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useSession } from 'next-auth/react';
 import { useToast } from "@/components/ui/use-toast";
 import 'react-calendar/dist/Calendar.css';
 import { Class, Enrollment, User } from "@prisma/client";
+import { Value } from "react-calendar/dist/esm/shared/types.js";
 
 interface CalendarProps {
   classes: (Class & {
@@ -22,11 +21,15 @@ export default function ClassCalendar({ classes, userId }: CalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const { toast } = useToast();
 
-  const handleDateChange = (value: Date | Date[] | null) => {
+  const handleDateChange = (value: Value) => {
     if (value instanceof Date) {
       setSelectedDate(value);
+    } else if (Array.isArray(value) && value[0] instanceof Date) {
+      // Handle date range if needed
+      setSelectedDate(value[0]);
     }
   };
+  
 
   const handleEnroll = async (classId: string) => {
     try {

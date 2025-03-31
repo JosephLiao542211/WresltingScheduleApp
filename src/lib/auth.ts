@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { compare } from 'bcrypt';
 import prisma from '@/lib/db';
 import { JWT } from 'next-auth/jwt';
+import GoogleProvider from "next-auth/providers/google";
 
 // Define admin emails
 const ADMIN_EMAILS = ['joseph.liao1018@gmail.com'];
@@ -62,7 +63,11 @@ export const authOptions: AuthOptions = {
         
         return customUser;
       }
-    })
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
   ],
   session: {
     strategy: "jwt" as const,
@@ -79,8 +84,8 @@ export const authOptions: AuthOptions = {
       return token;
     },
     async session({ session, token }: { session: Session; token: JWT }) {
-      if (token && session.user) {
-        session.user.id = token.sub;
+      if (session.user) {
+        session.user.id = token.sub!;
         session.user.isAdmin = token.isAdmin as boolean;
       }
       return session;

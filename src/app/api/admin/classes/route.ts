@@ -7,14 +7,8 @@ import prisma from "@/lib/prisma";
 
 const prismaClient = new PrismaClient();
 
-// Admin emails for authorization
-const ADMIN_EMAILS = ['joseph.liao1018@gmail.com']; // Add your admin emails here
 
-// Helper function to check if user is admin
-async function isAdmin(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  return session && session.user && ADMIN_EMAILS.includes(session.user.email as string);
-}
+
 
 // GET all classes (for admin)
 export async function GET() {

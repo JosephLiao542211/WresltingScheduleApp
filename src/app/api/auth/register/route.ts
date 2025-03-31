@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.create({
       data: {
         email,
-        password: hashedPassword,
+        hashedPassword,
         name: name || email.split("@")[0], // Use part of email as name if not provided
       },
     });

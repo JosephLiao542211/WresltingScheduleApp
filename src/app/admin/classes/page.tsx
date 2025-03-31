@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Calendar from 'react-calendar';
+import type { Value } from 'react-calendar/dist/esm/shared/types.js';
 import 'react-calendar/dist/Calendar.css';
 import {
   AlertDialog,
@@ -59,7 +60,6 @@ export default function AdminClasses() {
     selectedDays: Array(7).fill(false),
   });
   const [isClearing, setIsClearing] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -85,9 +85,11 @@ export default function AdminClasses() {
     }
   };
   
-  const handleDateChange = (value: Date | Date[] | null) => {
+  const handleDateChange = (value: Value) => {
     if (value instanceof Date) {
       setSelectedDate(value);
+    } else if (Array.isArray(value) && value[0] instanceof Date) {
+      setSelectedDate(value[0]);
     }
   };
   
@@ -333,10 +335,10 @@ export default function AdminClasses() {
         const error = await response.json();
         throw new Error(error.message || 'Failed to clear classes');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message || "Failed to clear classes. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to clear classes. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -447,7 +449,7 @@ export default function AdminClasses() {
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <h4 className="text-sm font-medium text-gray-700 mb-2">Registered Users:</h4>
                         <div className="space-y-1 max-h-40 overflow-y-auto">
-                          {classItem.enrollments.map((enrollment: any) => (
+                          {classItem.enrollments.map((enrollment: Enrollment & { user: User }) => (
                             <div 
                               key={enrollment.user.id} 
                               className="flex items-center justify-between py-1 px-2"
