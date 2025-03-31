@@ -78,8 +78,8 @@ export default function AdminClasses() {
       }
       const data = await res.json();
       setClasses(data);
-    } catch (error) {
-      console.error('Failed to fetch classes', error);
+    } catch {
+      console.error('Failed to fetch classes');
     } finally {
       setIsLoading(false);
     }

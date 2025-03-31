@@ -18,13 +18,11 @@ interface CalendarProps {
   userId: string;
 }
 
-type CalendarValue = Date | [Date, Date] | null;
-
 export default function ClassCalendar({ classes, userId }: CalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const { toast } = useToast();
 
-  const handleDateChange = (value: any) => {
+  const handleDateChange = (value: Date | Date[] | null) => {
     if (value instanceof Date) {
       setSelectedDate(value);
     }

@@ -17,7 +17,7 @@ async function isAdmin(req: NextRequest) {
 }
 
 // GET all classes (for admin)
-export async function GET(request: NextRequest) {
+export async function GET() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.email || session.user.email !== 'joseph.liao1018@gmail.com') {
