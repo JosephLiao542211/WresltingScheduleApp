@@ -4,12 +4,12 @@ import { hash } from 'bcrypt';
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password } = await req.json();
+    const { email, password, name } = await req.json();
     
     // Basic validation
-    if (!name || !email || !password) {
+    if (!email || !password) {
       return NextResponse.json(
-        { message: 'Missing required fields' },
+        { error: 'Email and password are required' },
         { status: 400 }
       );
     }
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     
     if (existingUser) {
       return NextResponse.json(
-        { message: 'User with this email already exists' },
+        { error: 'User with this email already exists' },
         { status: 400 }
       );
     }
@@ -32,20 +32,22 @@ export async function POST(req: NextRequest) {
     // Create user
     const user = await prisma.user.create({
       data: {
-        name,
         email,
-        hashedPassword,
+        password: hashedPassword,
+        name: name || email.split("@")[0], // Use part of email as name if not provided
       },
     });
     
-    // Don't return the password
-    const { hashedPassword: _, ...userWithoutPassword } = user;
-    
-    return NextResponse.json(userWithoutPassword, { status: 201 });
+    return NextResponse.json({
+      user: {
+        email: user.email,
+        name: user.name,
+      },
+    });
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(
-      { message: 'Something went wrong' },
+      { error: 'Error creating user' },
       { status: 500 }
     );
   }

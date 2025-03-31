@@ -19,15 +19,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2, Trash2, Plus } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Class, Enrollment, User } from "@prisma/client";
 
-interface ClassItem {
-  id: string;
-  title: string;
-  description: string;
-  startTime: string;
-  endTime: string;
-  capacity: number;
-  enrollments?: any[];
+interface ClassWithEnrollments extends Class {
+  enrollments?: (Enrollment & { user: User })[];
 }
 
 interface FormData {
@@ -48,7 +43,7 @@ export default function AdminClasses() {
   const router = useRouter();
   const { toast } = useToast();
   
-  const [classes, setClasses] = useState<ClassItem[]>([]);
+  const [classes, setClasses] = useState<ClassWithEnrollments[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [formData, setFormData] = useState<FormData>({

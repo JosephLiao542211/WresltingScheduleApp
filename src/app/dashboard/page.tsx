@@ -1,47 +1,29 @@
-'use client';
+import { getServerSession } from "next-auth";
+import { authOptions } from "../api/auth/[...nextauth]/route";
+import { redirect } from "next/navigation";
+import prisma from "@/lib/prisma";
+import Calendar from "@/components/Calendar";
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { redirect } from 'next/navigation';
-import ClassCalendar from '@/components/Calendar';
+export default async function Dashboard() {
+  const session = await getServerSession(authOptions);
 
-interface ClassItem {
-  id: string;
-  title: string;
-  startTime: string;
-  endTime: string;
-}
-
-export default function Dashboard() {
-  const { data: session, status } = useSession();
-  const [enrolledClasses, setEnrolledClasses] = useState<ClassItem[]>([]);
-  
-  useEffect(() => {
-    if (status === 'authenticated') {
-      // Fetch enrolled classes
-      const fetchEnrolledClasses = async () => {
-        const res = await fetch('/api/classes/enrolled');
-        const data = await res.json();
-        setEnrolledClasses(data);
-      };
-      
-      fetchEnrolledClasses();
-    }
-  }, [status]);
-  
-  if (status === 'loading') {
-    return <div>Loading...</div>;
+  if (!session || !session.user?.id) {
+    redirect("/login");
   }
-  
-  if (status === 'unauthenticated') {
-    redirect('/auth/login');
-  }
-  
+
+  const classes = await prisma.class.findMany({
+    include: {
+      enrollments: {
+        include: {
+          user: true,
+        },
+      },
+    },
+  });
+
   return (
-    <div className="container mx-auto py-8">
-          <div>
-        <ClassCalendar />
-      </div>
-    </div>
+    <main className="container mx-auto py-8 px-4">
+      <Calendar classes={classes} userId={session.user.id} />
+    </main>
   );
 } 
