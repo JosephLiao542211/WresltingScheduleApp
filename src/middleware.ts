@@ -5,7 +5,8 @@ import type { NextRequest } from 'next/server';
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
   
-  // Only protect admin routes
+  // On
+  // ly protect admin routes
   if (path.startsWith('/admin')) {
     try {
       const token = await getToken({
