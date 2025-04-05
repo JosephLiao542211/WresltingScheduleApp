@@ -75,17 +75,20 @@ export const authOptions: AuthOptions = {
   },
   pages: {
     signIn: '/auth/login',
+    error: '/auth/error',
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.isAdmin = (user as CustomUser).isAdmin;
+        token.email = user.email;
       }
       return token;
     },
     async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
         session.user.id = token.sub!;
+        session.user.email = token.email as string;
         session.user.isAdmin = token.isAdmin as boolean;
       }
       return session;
