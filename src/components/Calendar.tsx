@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Calendar from 'react-calendar';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
@@ -26,7 +26,7 @@ export default function ClassCalendar({ classes: initialClasses, userId }: Calen
   const { data: session } = useSession();
 
   // Fetch latest data
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     try {
       const [classesRes, enrolledRes] = await Promise.all([
         fetch('/api/classes'),
@@ -48,7 +48,7 @@ export default function ClassCalendar({ classes: initialClasses, userId }: Calen
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
   // Initial data fetch and setup polling for updates
   useEffect(() => {
