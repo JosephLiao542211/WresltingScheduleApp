@@ -8,7 +8,7 @@ export default async function Dashboard() {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user?.id) {
-    redirect("/login");
+    redirect("/auth/login");
   }
 
   const classes = await prisma.class.findMany({
@@ -26,4 +26,4 @@ export default async function Dashboard() {
       <Calendar classes={classes} userId={session.user.id} />
     </main>
   );
-} 
+}
