@@ -31,7 +31,7 @@ export default function Register() {
       const data = await response.json();
       
       if (!response.ok) {
-        setError(data.message || 'Something went wrong');
+        setError(data.error || 'Something went wrong');
         return;
       }
       

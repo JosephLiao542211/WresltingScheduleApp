@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
 }
 
 // DELETE a class
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.email || session.user.email !== "joseph.liao1018@gmail.com") {
@@ -132,17 +132,32 @@ export async function DELETE() {
   }
 
   try {
-    // Delete all enrollments first
-    await prisma.enrollment.deleteMany();
-    
-    // Then delete all classes
-    await prisma.class.deleteMany();
+    const { searchParams } = new URL(request.url);
+    const classId = searchParams.get('id');
 
-    return NextResponse.json({ message: "All classes cleared successfully" });
+    if (!classId) {
+      return NextResponse.json({ error: "Class ID is required" }, { status: 400 });
+    }
+
+    // First delete all enrollments for this class
+    await prisma.enrollment.deleteMany({
+      where: {
+        classId: classId
+      }
+    });
+    
+    // Then delete the class
+    await prisma.class.delete({
+      where: {
+        id: classId
+      }
+    });
+
+    return NextResponse.json({ message: "Class deleted successfully" });
   } catch (error) {
-    console.error("Failed to clear classes:", error);
+    console.error("Failed to delete class:", error);
     return NextResponse.json(
-      { error: "Failed to clear classes" },
+      { error: "Failed to delete class" },
       { status: 500 }
     );
   }

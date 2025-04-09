@@ -32,7 +32,7 @@ function LoginForm() {
           variant: "destructive",
         });
       } else {
-        const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+        const callbackUrl = searchParams?.get("callbackUrl") || "/dashboard";
         router.push(callbackUrl);
       }
     } catch {
