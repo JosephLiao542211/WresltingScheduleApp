@@ -101,7 +101,13 @@ function LoginForm() {
           </div>
         </form>
 
-        <div className="text-center">
+        <div className="flex flex-col items-center space-y-2">
+          <Link
+            href="/auth/forgot-password"
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
+            Forgot your password?
+          </Link>
           <Link
             href="/auth/register"
             className="font-medium text-blue-600 hover:text-blue-500"
